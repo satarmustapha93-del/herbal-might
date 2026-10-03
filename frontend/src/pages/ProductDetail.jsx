@@ -1,0 +1,14 @@
+import { useEffect, useState } from 'react';
+import { ArrowLeft, Check, Minus, Plus, ShoppingBag } from 'lucide-react';
+import { Link, useParams } from 'react-router-dom';
+import ProductCard from '../components/ProductCard';
+import { demoProducts } from '../data/products';
+import { supabase } from '../lib/supabase';
+import { useCart } from '../context/CartContext';
+const naira=n=>`₦${Number(n).toLocaleString('en-NG')}`;
+export default function ProductDetail(){
+ const {slug}=useParams(); const [product,setProduct]=useState(demoProducts.find(p=>p.slug===slug)); const [qty,setQty]=useState(1); const [others,setOthers]=useState(demoProducts.slice(0,4)); const {add}=useCart();
+ useEffect(()=>{if(supabase)supabase.from('products').select('*').eq('slug',slug).maybeSingle().then(({data})=>{if(data)setProduct(data)});},[slug]);
+ if(!product)return <div className="container page-wrap"><div className="empty-state"><h2>Botanical not found</h2><Link className="under-link" to="/shop">Return to shop</Link></div></div>;
+ return <div className="container page-wrap"><Link className="back-link" to="/shop"><ArrowLeft size={15}/> Back to the shop</Link><div className="detail-layout"><div className="detail-image"><img src={product.image_url} alt={product.name}/><span>{product.category}</span></div><div className="detail-info"><span className="eyebrow">HERBAL MIGHT · BOTANICALS</span><h1>{product.name}</h1><strong className="detail-price">{naira(product.price)}</strong><p className="detail-description">{product.description}</p><div className="detail-divider"/><h3>Why it is treasured</h3><p>{product.benefits||'A thoughtful botanical for your everyday rituals.'}</p><h3>How to prepare</h3><p>{product.how_to_use||'Use as desired in a tea, infusion or favourite recipe.'}</p><div className="stock-note"><span/> {product.stock>0?`${product.stock} available`:'Currently unavailable'}</div><div className="detail-actions"><div className="quantity-stepper"><button onClick={()=>setQty(Math.max(1,qty-1))} aria-label="Decrease quantity"><Minus size={15}/></button><span>{qty}</span><button onClick={()=>setQty(Math.min(product.stock||1,qty+1))} aria-label="Increase quantity"><Plus size={15}/></button></div><button className="button button-dark" disabled={!product.stock} onClick={()=>add(product,qty)}><ShoppingBag size={16}/> Add to cart · {naira(product.price*qty)}</button></div><p className="care-note"><Check size={14}/> Carefully prepared and packed with care</p></div></div><section className="section related-section"><div className="section-head"><div><span className="eyebrow">FROM THE APOTHECARY</span><h2>You may also <i>like.</i></h2></div></div><div className="product-grid">{others.filter(x=>x.id!==product.id).slice(0,4).map(p=><ProductCard key={p.id} product={p}/>)}</div></section></div>;
+}
